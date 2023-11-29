@@ -87,9 +87,15 @@ async function run() {
       const result = await biodataCollection.findOne(query);
       res.send(result);
     })
+  
     app.post('/biodatas', async (req, res) => {
-      const favouriteItem = req.body;
-      const result = await biodataCollection.insertOne(favouriteItem);
+      const item = req.body;
+      const oldID = { "biodataId": -1 }; 
+      const lastBiodata = await biodataCollection.findOne({}, { sort: oldID });
+      let lastId = parseInt(lastBiodata ? lastBiodata.biodataId : 0)
+      const newId = lastId + 1;
+      item.biodataId = newId.toString();
+      const result = await biodataCollection.insertOne(item);
       res.send(result);
     })
 
