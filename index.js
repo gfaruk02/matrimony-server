@@ -10,7 +10,6 @@ app.use(cors());
 app.use(express.json());
 
 
-
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.zjs4f1h.mongodb.net/?retryWrites=true&w=majority`;
 
@@ -28,7 +27,6 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
 
-
     const biodataCollection = client.db("matrimonyDb").collection("biodata");
     const favouritesCollection = client.db("matrimonyDb").collection("favourites");
     const reviewsCollection = client.db("matrimonyDb").collection("reviews");
@@ -42,6 +40,7 @@ async function run() {
       })
       res.send({ token });
     })
+
     //middlewares for verifytoken
     const verifyToken = (req, res, next) => {
       console.log('inside verify token', req.headers);
@@ -70,6 +69,7 @@ async function run() {
       next()
     }
 
+    //biodata related Api
     app.get('/biodatas', async (req, res) => {
       const result = await biodataCollection.find().toArray();
       res.send(result);
@@ -88,10 +88,10 @@ async function run() {
       const result = await biodataCollection.findOne(query);
       res.send(result);
     })
-  
+
     app.post('/biodatas', async (req, res) => {
       const item = req.body;
-      const oldID = { "biodataId": -1 }; 
+      const oldID = { "biodataId": -1 };
       const lastBiodata = await biodataCollection.findOne({}, { sort: oldID });
       let lastId = parseInt(lastBiodata ? lastBiodata.biodataId : 0)
       const newId = lastId + 1;
@@ -124,7 +124,7 @@ async function run() {
       res.send(result);
     })
 
-
+    //add to fevourites api
     app.get('/favourites', async (req, res) => {
       const email = req.query.email;
       const query = { email: email };
@@ -144,7 +144,7 @@ async function run() {
       res.send(result);
     })
 
-    //Review
+    //Review api
     app.get('/reviews', async (req, res) => {
       const result = await reviewsCollection.find().toArray();
       res.send(result);
@@ -210,20 +210,20 @@ async function run() {
       res.send({ admin })
     })
     //contact Request api
-    app.get('/contactRequest',verifyToken, async (req, res) => {
+    app.get('/contactRequests', verifyToken, verifyAdmin, async (req, res) => {
       const result = await contactRequestCollection.find().toArray();
       res.send(result);
     })
-    
-    app.get('/contactRequests',verifyToken, async (req, res) => {
+
+    app.get('/contactRequest', verifyToken, async (req, res) => {
       const email = req.query.email;
       const query = { email: email };
       const result = await contactRequestCollection.find(query).toArray();
       res.send(result);
     })
- 
 
-    app.patch('/contactRequest/:id',verifyToken, async (req, res) => {
+
+    app.patch('/contactRequest/:id', verifyToken, async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) }
       const updatedRole = {
@@ -235,46 +235,44 @@ async function run() {
       res.send(result);
     })
 
-    app.delete('/contactRequest/:id',verifyToken, async (req, res) => {
+    app.delete('/contactRequest/:id', verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) }
       const result = await contactRequestCollection.deleteOne(query);
       res.send(result);
     })
 
-  // payment intent
-  app.post('/create-payment-intent', async (req, res) => {
-    const { price } = req.body;
-    const amount = parseInt(price * 100);
-    console.log(amount, 'amount inside the intent')
+    // payment intent api
+    app.post('/create-payment-intent', async (req, res) => {
+      const { price } = req.body;
+      const amount = parseInt(price * 100);
+      console.log(amount, 'amount inside the intent')
 
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: amount,
-      currency: 'usd',
-      payment_method_types: ['card']
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: 'usd',
+        payment_method_types: ['card']
+      });
+
+      res.send({
+        clientSecret: paymentIntent.client_secret
+      })
     });
-
-    res.send({
-      clientSecret: paymentIntent.client_secret
-    })
-  });
-     app.post('/contactRequest',verifyToken, async (req, res) => {
+    app.post('/contactRequest', verifyToken, async (req, res) => {
       const requestItem = req.body;
       const result = await contactRequestCollection.insertOne(requestItem);
       res.send(result);
     })
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    // await client.db("admin").command({ ping: 1 });
+    // console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
   }
 }
 run().catch(console.dir);
-
-
 
 
 
