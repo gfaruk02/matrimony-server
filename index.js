@@ -3,6 +3,7 @@ const cors = require('cors');
 require('dotenv').config()
 const jwt = require('jsonwebtoken');
 const app = express();
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 const port = process.env.PORT || 5000;
 
 app.use(cors());
@@ -213,17 +214,14 @@ async function run() {
       const result = await contactRequestCollection.find().toArray();
       res.send(result);
     })
+    
     app.get('/contactRequests',verifyToken, async (req, res) => {
       const email = req.query.email;
       const query = { email: email };
       const result = await contactRequestCollection.find(query).toArray();
       res.send(result);
     })
-    app.post('/contactRequest',verifyToken, async (req, res) => {
-      const requestItem = req.body;
-      const result = await contactRequestCollection.insertOne(requestItem);
-      res.send(result);
-    })
+ 
 
     app.patch('/contactRequest/:id',verifyToken, async (req, res) => {
       const id = req.params.id;
@@ -241,6 +239,28 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) }
       const result = await contactRequestCollection.deleteOne(query);
+      res.send(result);
+    })
+
+  // payment intent
+  app.post('/create-payment-intent', async (req, res) => {
+    const { price } = req.body;
+    const amount = parseInt(price * 100);
+    console.log(amount, 'amount inside the intent')
+
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amount,
+      currency: 'usd',
+      payment_method_types: ['card']
+    });
+
+    res.send({
+      clientSecret: paymentIntent.client_secret
+    })
+  });
+     app.post('/contactRequest',verifyToken, async (req, res) => {
+      const requestItem = req.body;
+      const result = await contactRequestCollection.insertOne(requestItem);
       res.send(result);
     })
 
