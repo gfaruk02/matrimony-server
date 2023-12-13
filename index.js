@@ -32,6 +32,7 @@ async function run() {
     const reviewsCollection = client.db("matrimonyDb").collection("reviews");
     const usersCollection = client.db("matrimonyDb").collection("users");
     const contactRequestCollection = client.db("matrimonyDb").collection("contactRequest");
+    const faqCollection = client.db("matrimonyDb").collection("faq`");
     //jwt api
     app.post('/jwt', async (req, res) => {
       const user = req.body;
@@ -261,6 +262,18 @@ async function run() {
     app.post('/contactRequest', verifyToken, async (req, res) => {
       const requestItem = req.body;
       const result = await contactRequestCollection.insertOne(requestItem);
+      res.send(result);
+    })
+
+    //faq  api
+    app.get('/faq', async (req, res) => {
+      const result = await faqCollection.find().toArray();
+      res.send(result);
+    })
+
+    app.post('/faq', async (req, res) => {
+      const query = req.body;
+      const result = await faqCollection.insertOne(query);
       res.send(result);
     })
 
